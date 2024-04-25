@@ -1,0 +1,6 @@
+@WebCalculatorAPI_HostAddress = http://localhost:5291
+
+GET {{WebCalculatorAPI_HostAddress}}/SignUp/
+Accept: application/json
+
+###

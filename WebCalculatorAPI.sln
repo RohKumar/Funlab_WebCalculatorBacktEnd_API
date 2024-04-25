@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34714.143
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCalculatorAPI", "WebCalculatorAPI\WebCalculatorAPI.csproj", "{1FC6CF28-C961-4995-BC90-E55175EDA38B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCalculator.Models", "WebCalculator.Models\WebCalculator.Models.csproj", "{F9D63EE3-9F32-496E-BD98-5368024486CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1FC6CF28-C961-4995-BC90-E55175EDA38B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FC6CF28-C961-4995-BC90-E55175EDA38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FC6CF28-C961-4995-BC90-E55175EDA38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FC6CF28-C961-4995-BC90-E55175EDA38B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9D63EE3-9F32-496E-BD98-5368024486CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9D63EE3-9F32-496E-BD98-5368024486CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9D63EE3-9F32-496E-BD98-5368024486CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9D63EE3-9F32-496E-BD98-5368024486CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5A5A559-3AC0-47EB-AB10-3F0BF1ED9471}
+	EndGlobalSection
+EndGlobal
