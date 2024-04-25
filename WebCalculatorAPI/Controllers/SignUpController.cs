@@ -63,9 +63,10 @@ namespace WebCalculatorAPI.Controllers
                     SaveUserDataToJson(userData, password);
 
                     // Send welcome email
-                    SendWelcomeEmail(request.Email, password);
-
-                    return Ok(new { message = "Sign-up successful! Payment of $10 processed." });
+                    // SendWelcomeEmail(request.Email, password);
+                    // Return a success response
+                    return Ok(new { message = "Sign-up successful! User data saved." });
+                    // return Ok(new { message = "Sign-up successful! Payment of $10 processed." });
                 }
                 else
                 {
