@@ -93,7 +93,7 @@ namespace WebCalculatorAPI.Controllers
                 var service1 = new SubscriptionService();
                 service1.Update(subscription.Id, suoptions);
 
-
+                var password = GenerateRandomPassword();
 
                 // Save user data and subscription details
                 var userData = new
@@ -101,10 +101,10 @@ namespace WebCalculatorAPI.Controllers
                     Name = request.Name,
                     Email = request.Email,
                     LastFourDigits = request.CardNumber.Substring(request.CardNumber.Length - 4),
-                    ExpiryDate = request.Expiration
+                    ExpiryDate = request.Expiration,
                 };
 
-                SaveUserDataToJson(userData, customer.Id);
+                SaveUserDataToJson(userData,password, customer.Id);
 
                 // Send welcome email commented as Dont want to give out the password of my smtp server
                // SendWelcomeEmail(request.Email);
@@ -133,7 +133,9 @@ namespace WebCalculatorAPI.Controllers
             smtpClient.Send("your-email@example.com", email, "Welcome to Our Service", "Thank you for signing up!");
         }
 
-        private void SaveUserDataToJson(dynamic userData, string subscriptionId)
+        
+
+        private void SaveUserDataToJson(dynamic userData, string password, string subscriptionId )
         {
             var json = JsonConvert.SerializeObject(new
             {
@@ -141,6 +143,7 @@ namespace WebCalculatorAPI.Controllers
                 Email = userData.Email,
                 LastFourDigits = userData.LastFourDigits,
                 ExpiryDate = userData.ExpiryDate,
+                Password = password,
                 SubscriptionId = subscriptionId
             });
 
@@ -149,6 +152,15 @@ namespace WebCalculatorAPI.Controllers
             {
                 streamWriter.Write(json);
             }
+        }
+
+        private string GenerateRandomPassword()
+        {
+            // Generate a random password of length 8
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, 8)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
     }
 }
