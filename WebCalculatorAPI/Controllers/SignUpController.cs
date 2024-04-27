@@ -16,11 +16,13 @@ namespace WebCalculatorAPI.Controllers
     [ApiController]
     public class SignUpController : ControllerBase
     {
-        private readonly string _stripeSecretKey = "sk_test_51P8zCSRwYPgJLv8zxrJkRCE4aZsqnnrpMalmRAtGAbwd1Q7RWvx4fXOBNHfwn4tw8jEd61w4hYPOHwhR9j5acB6p00RiCl2lKl"; // Replace with your Stripe secret key
-        private readonly string _stripePriceId = "price_1P9wbtRwYPgJLv8zcfowMqnx"; // Replace with your Stripe price ID for the monthly subscription
+        private readonly string _stripeSecretKey;
+        private readonly string _stripePriceId;
 
-        public SignUpController()
+        public SignUpController(IConfiguration configuration)
         {
+            _stripeSecretKey = configuration["StripeSettings:SecretKey"];
+            _stripePriceId = configuration["StripeSettings:PriceId"];
             StripeConfiguration.ApiKey = _stripeSecretKey;
         }
 
@@ -62,11 +64,6 @@ namespace WebCalculatorAPI.Controllers
                 var customerService = new CustomerService();
                 var customer = customerService.Create(customerOptions);
 
-
-                
-
-               
-
                 // Attach payment method to the customer
                 var attachOptions = new PaymentMethodAttachOptions
                 {
@@ -74,10 +71,6 @@ namespace WebCalculatorAPI.Controllers
                 };
 
                 var paymentMethodAttached = paymentMethodService.Attach(paymentMethod.Id, attachOptions);
-
-                StripeConfiguration.ApiKey = _stripeSecretKey;
-
-
 
                 var options = new SubscriptionCreateOptions
                 {
@@ -113,7 +106,7 @@ namespace WebCalculatorAPI.Controllers
 
                 SaveUserDataToJson(userData, customer.Id);
 
-                // Send welcome email
+                // Send welcome email commented as Dont want to give out the password of my smtp server
                // SendWelcomeEmail(request.Email);
 
                 return Ok(new { message = "Sign-up successful! Subscription created." });
