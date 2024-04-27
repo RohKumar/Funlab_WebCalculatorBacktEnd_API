@@ -3,12 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Stripe;
 using System;
+using System.IO;
+using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using WebCalculator.Models;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-using System.Net.Mail;
 
 namespace WebCalculatorAPI.Controllers
 {
@@ -18,85 +17,109 @@ namespace WebCalculatorAPI.Controllers
     public class SignUpController : ControllerBase
     {
         private readonly string _stripeSecretKey = "sk_test_51P8zCSRwYPgJLv8zxrJkRCE4aZsqnnrpMalmRAtGAbwd1Q7RWvx4fXOBNHfwn4tw8jEd61w4hYPOHwhR9j5acB6p00RiCl2lKl"; // Replace with your Stripe secret key
+        private readonly string _stripePriceId = "price_1P9wbtRwYPgJLv8zcfowMqnx"; // Replace with your Stripe price ID for the monthly subscription
 
         public SignUpController()
         {
-            StripeConfiguration.ApiKey = _stripeSecretKey; // Set your API key
+            StripeConfiguration.ApiKey = _stripeSecretKey;
         }
 
         [HttpPost]
         public async Task<IActionResult> SignUp(UserSignUpRequest request)
         {
-
-            var options = new PaymentIntentCreateOptions
-            {
-                Amount = 1000,
-                Currency = "aud",
-                PaymentMethod = "pm_card_visa",
-                Confirm = true,
-                ReturnUrl = "http://localhost:3000/"
-            };
-
-            var service = new PaymentIntentService();
-
-
             try
             {
-                var paymentIntent = service.Create(options);
 
-                // If the PaymentIntent status is succeeded, the payment was successful
-                if (paymentIntent.Status == "succeeded")
+                // Create payment method
+                var paymentMethodOptions = new PaymentMethodCreateOptions
                 {
-                    // Save user data
-                    var userData = new
+                    Type = "card",
+                    Card = new PaymentMethodCardOptions
                     {
-                        Name = request.Name,
-                        Email = request.Email,
-                        LastFourDigits = request.CardNumber.Substring(request.CardNumber.Length - 4),
-                        ExpiryDate = request.Expiration
-                    };
+                        Token = "tok_visa"
+                    },
+                };
 
-                    // Generate auto-generated password
-                    var password = GenerateRandomPassword();
+                var paymentMethodService = new PaymentMethodService();
+                var paymentMethod = paymentMethodService.Create(paymentMethodOptions);
 
-                    // Save user data to JSON file
-                    SaveUserDataToJson(userData, password);
 
-                    // Send welcome email
-                    // SendWelcomeEmail(request.Email, password);
-                    // Return a success response
-                    return Ok(new { message = "Sign-up successful! User data saved." });
-                    // return Ok(new { message = "Sign-up successful! Payment of $10 processed." });
-                }
-                else
+                // Create customer on Stripe
+                var customerOptions = new CustomerCreateOptions
                 {
-                    // Confirm the PaymentIntent to complete the payment
-                    var confirmOptions = new PaymentIntentConfirmOptions
+                    Email = request.Email,
+                    Name = request.Name,
+                    Balance = 5,
+                    PaymentMethod = paymentMethod.Id,
+                    InvoiceSettings = new CustomerInvoiceSettingsOptions
                     {
-                        PaymentMethod = "pm_card_visa" // Use the provided payment method
-                    };
-
-                    var confirmedPaymentIntent = service.Confirm(paymentIntent.Id, confirmOptions);
-
-                    // If the confirmed PaymentIntent status is succeeded, the payment was successful
-                    if (confirmedPaymentIntent.Status == "succeeded")
-                    {
-                        // Save user data and payment details to the database
-                        // Implement your database logic here
-
-                        // Return a success response
-                        return Ok(new { message = "Sign-up successful! Payment of $10 processed." });
+                        DefaultPaymentMethod = paymentMethod.Id // Also set the default payment method for invoices, if needed
                     }
-                    else
+
+                    // Add more customer options as needed
+                };
+
+                var customerService = new CustomerService();
+                var customer = customerService.Create(customerOptions);
+
+
+                
+
+               
+
+                // Attach payment method to the customer
+                var attachOptions = new PaymentMethodAttachOptions
+                {
+                    Customer = customer.Id,
+                };
+
+                var paymentMethodAttached = paymentMethodService.Attach(paymentMethod.Id, attachOptions);
+
+                StripeConfiguration.ApiKey = _stripeSecretKey;
+
+
+
+                var options = new SubscriptionCreateOptions
+                {
+                    Customer = customer.Id,
+                    Items = new List<SubscriptionItemOptions>
                     {
-                        // Payment was not successful
-                        return BadRequest("Payment failed.");
-                    }
-                }
+                     new SubscriptionItemOptions { Price = _stripePriceId },
+                    },
+                };
+                var service = new SubscriptionService();
+                var subscription = service.Create(options);
+
+                var suoptions = new SubscriptionUpdateOptions
+                {
+                    PaymentSettings = new SubscriptionPaymentSettingsOptions
+                    {
+                        PaymentMethodTypes = new List<string> { "card", "au_becs_debit" },
+                    },
+                };
+                var service1 = new SubscriptionService();
+                service1.Update(subscription.Id, suoptions);
+
+
+
+                // Save user data and subscription details
+                var userData = new
+                {
+                    Name = request.Name,
+                    Email = request.Email,
+                    LastFourDigits = request.CardNumber.Substring(request.CardNumber.Length - 4),
+                    ExpiryDate = request.Expiration
+                };
+
+                SaveUserDataToJson(userData, customer.Id);
+
+                // Send welcome email
+               // SendWelcomeEmail(request.Email);
+
+                return Ok(new { message = "Sign-up successful! Subscription created." });
             }
             catch (StripeException ex)
             {
-                // Handle Stripe errors
                 return BadRequest($"Stripe error: {ex.Message}");
             }
             catch (Exception ex)
@@ -105,9 +128,8 @@ namespace WebCalculatorAPI.Controllers
             }
         }
 
-        private void SendWelcomeEmail(string email, string password)
+        private void SendWelcomeEmail(string email)
         {
-            // Send welcome email with auto-generated password
             var smtpClient = new SmtpClient("your.smtp.server.com")
             {
                 Port = 587,
@@ -115,37 +137,25 @@ namespace WebCalculatorAPI.Controllers
                 EnableSsl = true,
             };
 
-            smtpClient.Send("your-email@example.com", email, "Welcome to Our Service", $"Your auto-generated password is: {password}");
+            smtpClient.Send("your-email@example.com", email, "Welcome to Our Service", "Thank you for signing up!");
         }
 
-        private void SaveUserDataToJson(dynamic userData, string password)
+        private void SaveUserDataToJson(dynamic userData, string subscriptionId)
         {
-            // Serialize user data and save to JSON file
             var json = JsonConvert.SerializeObject(new
             {
                 Name = userData.Name,
                 Email = userData.Email,
                 LastFourDigits = userData.LastFourDigits,
                 ExpiryDate = userData.ExpiryDate,
-                Password = password
+                SubscriptionId = subscriptionId
             });
 
-            // Save JSON data to file
             var filePath = "user_data.json";
             using (StreamWriter streamWriter = new StreamWriter(filePath))
             {
                 streamWriter.Write(json);
             }
         }
-
-        private string GenerateRandomPassword()
-        {
-            // Generate a random password of length 8
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var random = new Random();
-            return new string(Enumerable.Repeat(chars, 8)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
     }
-
 }
