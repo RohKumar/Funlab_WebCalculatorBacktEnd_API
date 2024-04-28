@@ -16,4 +16,10 @@
     <ProjectReference Include="..\WebCalculator.Models\WebCalculator.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
